@@ -2,15 +2,23 @@ import React, { useState } from "react";
 import axios from "axios";
 import "./VideoSearch.css";
 
+const API_KEY = "AIzaSyAdv4VPYe2S3hpzqw6ew0aQ0JV4loGHMgM"; // Replace with your YouTube API key
+
 const VideoSearch = () => {
     const [query, setQuery] = useState("");
     const [videos, setVideos] = useState([]);
-    const [selectedVideo, setSelectedVideo] = useState(null); // Store selected video
+    const [selectedVideo, setSelectedVideo] = useState(null);
 
     const searchVideos = async () => {
         if (!query.trim()) return;
-        const response = await axios.get(`http://localhost:5000/search?q=${query}`);
-        setVideos(response.data);
+        try {
+            const response = await axios.get(
+                `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${query}&key=${API_KEY}`
+            );
+            setVideos(response.data.items);
+        } catch (error) {
+            console.error("Error fetching videos:", error);
+        }
     };
 
     return (
@@ -26,7 +34,6 @@ const VideoSearch = () => {
                 <button onClick={searchVideos}>Search</button>
             </div>
 
-            {/* Show Video Player if a video is selected */}
             {selectedVideo && (
                 <div className="video-player">
                     <iframe
@@ -35,6 +42,7 @@ const VideoSearch = () => {
                         src={`https://www.youtube.com/embed/${selectedVideo}`}
                         title="YouTube video player"
                         frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                     ></iframe>
                 </div>
@@ -45,7 +53,7 @@ const VideoSearch = () => {
                     <div
                         className="video-card"
                         key={video.id.videoId}
-                        onClick={() => setSelectedVideo(video.id.videoId)} // Click to play video
+                        onClick={() => setSelectedVideo(video.id.videoId)}
                     >
                         <img src={video.snippet.thumbnails.medium.url} alt={video.snippet.title} />
                         <h3>{video.snippet.title}</h3>
