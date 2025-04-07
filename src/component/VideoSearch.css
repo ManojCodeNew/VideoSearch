@@ -43,6 +43,25 @@
       }
     }
   }
+  .searchData {
+    width: 60%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .items {
+    border: 1px solid rgb(77, 77, 77);
+    padding: 8px;
+    border-radius: 8px;
+  }
+  .items:hover {
+    background-color: #f0f0f0;
+    color: black;
+    cursor: pointer;
+  }
 
   .video-list {
     display: grid;
@@ -69,6 +88,13 @@
       h3 {
         font-size: 14px;
         margin: 10px 0;
+      }
+      .date-time {
+        font-size: 12px;
+        color: #ccc;
+        text-align: left;
+        margin-top: auto;
+        margin-bottom: 1px;
       }
 
       a {
