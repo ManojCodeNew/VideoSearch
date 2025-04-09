@@ -1,9 +1,9 @@
 import VideoSearch from './component/VideoSearch';
-
 function App() {
   return (
     <div >
-      <VideoSearch/>
+      <VideoSearch />
+
     </div>
   );
 }
