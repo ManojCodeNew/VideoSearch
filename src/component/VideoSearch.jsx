@@ -25,7 +25,8 @@ const VideoSearch = () => {
 
     }, [])
 
-    const searchVideos = async () => {
+    const searchVideos = async (e) => {
+
         if (!query.trim()) return;
         setSearchActive(true);
         let updatedData = [...prevSearchedData];
@@ -64,8 +65,13 @@ const VideoSearch = () => {
                         setQuery(value);
                         setSearchActive(value.length > 0);
                     }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            searchVideos(); // Trigger search on Enter key
+                        }
+                    }}
                 />
-                <button onClick={searchVideos}>Search</button>
+                <button onClick={searchVideos} >Search</button>
             </div>
             {prevSearchedData && !searchActive && (
                 <div className="searchData">
