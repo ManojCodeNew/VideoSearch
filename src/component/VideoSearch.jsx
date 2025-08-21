@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import "./VideoSearch.css";
+import './VideoSearch.css'
+import { Search, History, X, Play, Clock, Eye } from "lucide-react";
 
-const API_KEY = "AIzaSyBAxPNhLPznVcC5rT5OgYutKQdXXMWGw7A"; // Replace with your YouTube API key
+const API_KEY = "AIzaSyBAxPNhLPznVcC5rT5OgYutKQdXXMWGw7A";
+
+const Loader = () => (
+    <div className="loader-container">
+        <div className="spinner"></div>
+    </div>
+);
 
 const VideoSearch = () => {
     const [query, setQuery] = useState("");
@@ -10,105 +16,282 @@ const VideoSearch = () => {
     const [selectedVideo, setSelectedVideo] = useState(null);
     const [prevSearchedData, setPrevSearchedData] = useState([]);
     const [searchActive, setSearchActive] = useState(false);
-    const defaultVideos = async () => {
-        const response = await axios.get(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=news in kannada&key=${API_KEY}`
-        );
-        setVideos(response.data.items);
+    const [loading, setLoading] = useState(false);
+    const [nextPageToken, setNextPageToken] = useState(null);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    }
-
-
-    useEffect(() => {
-        const savedQueries = JSON.parse(localStorage.getItem("query")) || [];
-        setPrevSearchedData(savedQueries.reverse());
-
-    }, [])
-
-    const searchVideos = async (e) => {
-
-        if (!query.trim()) return;
-        setSearchActive(true);
-        let updatedData = [...prevSearchedData];
-        if (!updatedData.includes(query)) {
-            updatedData.push(query);
-            // Keep only the last 10 items
-            if (updatedData.length > 10) {
-                updatedData = updatedData.slice(updatedData.length - 10);
-            }
-            localStorage.setItem("query", JSON.stringify(updatedData));
-            setPrevSearchedData(updatedData);
-        }
+    // Fetch videos from YouTube API
+    const fetchVideos = async (searchQuery, pageToken = "") => {
+        setLoading(true);
         try {
-            const response = await axios.get(
-                `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${query}&key=${API_KEY}`
+            const response = await fetch(
+                `https://www.googleapis.com/youtube/v3/search?` +
+                new URLSearchParams({
+                    part: "snippet",
+                    type: "video",
+                    q: searchQuery,
+                    maxResults: "12",
+                    pageToken: pageToken,
+                    key: API_KEY,
+                })
             );
-            setVideos(response.data.items);
-            console.log("YT Videos", response);
 
+            const data = await response.json();
 
+            // If pageToken exists -> append, else replace
+            if (pageToken) {
+                setVideos((prev) => [...prev, ...data.items]);
+            } else {
+                setVideos(data.items);
+            }
+
+            setNextPageToken(data.nextPageToken || null);
         } catch (error) {
             console.error("Error fetching videos:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
+    // Load history from memory (since localStorage is not available)
+    useEffect(() => {
+        // Initialize empty history
+        setPrevSearchedData([]);
+    }, []);
+
+    // Handle search
+    const searchVideos = () => {
+        if (!query.trim()) return;
+        setSearchActive(true);
+
+        let updatedData = [...prevSearchedData];
+        if (!updatedData.includes(query)) {
+            updatedData.push(query);
+            if (updatedData.length > 10) {
+                updatedData = updatedData.slice(updatedData.length - 10);
+            }
+            setPrevSearchedData(updatedData);
+        }
+
+        fetchVideos(query);
+    };
+
+    // Infinite scroll - load more when near bottom
+    useEffect(() => {
+        const handleScroll = () => {
+            if (
+                window.innerHeight + window.scrollY >=
+                document.body.scrollHeight - 300
+            ) {
+                if (nextPageToken && !loading) {
+                    fetchVideos(query, nextPageToken);
+                }
+            }
+        };
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [query, nextPageToken, loading]);
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) return "Today";
+        if (diffDays === 1) return "Yesterday";
+        if (diffDays < 30) return `${diffDays} days ago`;
+        if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+        return `${Math.floor(diffDays / 365)} years ago`;
+    };
+
+    const clearHistory = () => {
+        setPrevSearchedData([]);
+    };
+
     return (
-        <div className="video-search-container">
-            <h1>Search YouTube Videos</h1>
-            <div className="search-box">
-                <input
-                    type="text"
-                    placeholder="Search videos..."
-                    value={query}
-                    onChange={(e) => {
-                        let value = e.target.value;
-                        setQuery(value);
-                        setSearchActive(value.length > 0);
-                    }}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                            searchVideos(); // Trigger search on Enter key
-                        }
-                    }}
-                />
-                <button onClick={searchVideos} >Search</button>
-            </div>
-            {prevSearchedData && !searchActive && (
-                <div className="searchData">
-                    {prevSearchedData.map((item, index) => (
-                        <p className="items" key={index} onClick={() => setQuery(item)}>{item}</p>
-                    ))}
-                </div>
-            )}
+        <>
 
-            {selectedVideo && (
-                <div className="video-player">
-                    <iframe
-                        width="100%"
-                        height="400"
-                        src={`https://www.youtube.com/embed/${selectedVideo}`}
-                        title="YouTube video player"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                    ></iframe>
-                </div>
-            )}
 
-            <div className="video-list">
-                {videos.map(video => (
-                    <div
-                        className="video-card"
-                        key={video.id.videoId}
-                        onClick={() => setSelectedVideo(video.id.videoId)}
-                    >
-                        <img src={video.snippet.thumbnails.medium.url} alt={video.snippet.title} />
-                        <h3>{video.snippet.title}</h3>
-                        <p className="date-time">{(new Date(video.snippet.publishTime).toLocaleString("en-US"))}</p>
+            <div className="app-container">
+                {/* Animated Background */}
+                <div className="animated-bg">
+                    <div className="floating-element-1"></div>
+                    <div className="floating-element-2"></div>
+                </div>
+
+                {/* History Sidebar */}
+                <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+                    <div className="sidebar-header">
+                        <h3 className="sidebar-title">
+                            <History size={20} />
+                            Search History
+                        </h3>
+                        <button
+                            onClick={() => setSidebarOpen(false)}
+                            className="close-btn"
+                        >
+                            <X size={20} />
+                        </button>
                     </div>
-                ))}
+
+                    <div className="sidebar-content">
+                        {prevSearchedData.length > 0 ? (
+                            <div>
+                                {[...prevSearchedData].reverse().map((item, index) => (
+                                    <div
+                                        key={index}
+                                        onClick={() => {
+                                            setQuery(item);
+                                            fetchVideos(item);
+                                            setSidebarOpen(false);
+                                        }}
+                                        className="history-item"
+                                    >
+                                        <Clock size={16} />
+                                        <span>{item}</span>
+                                    </div>
+                                ))}
+                                <button
+                                    onClick={clearHistory}
+                                    className="clear-history-btn"
+                                >
+                                    Clear History
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="empty-history">
+                                <History size={48} style={{ color: 'rgba(255, 255, 255, 0.6)', margin: '0 auto 1rem auto' }} />
+                                <h3>No search history yet</h3>
+                                <p>Your searches will appear here</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Backdrop */}
+                {sidebarOpen && (
+                    <div
+                        className="backdrop"
+                        onClick={() => setSidebarOpen(false)}
+                    ></div>
+                )}
+
+                {/* Main Content */}
+                <div className="main-content">
+                    {/* Header */}
+                    <div className="header">
+                        <div className="header-nav">
+                            <div></div>
+                            <h1 className="main-title">YouTube Explorer</h1>
+                            <button
+                                onClick={() => setSidebarOpen(true)}
+                                className="history-toggle-btn"
+                            >
+                                <History size={24} />
+                            </button>
+                        </div>
+                        <p className="subtitle">Discover amazing videos with our beautiful search experience</p>
+                    </div>
+
+                    {/* Search Box */}
+                    <div className="search-container">
+                        <div className="search-input-container">
+                            <Search className="search-icon" size={20} />
+                            <input
+                                type="text"
+                                placeholder="Search for amazing videos..."
+                                value={query}
+                                onChange={(e) => {
+                                    let value = e.target.value;
+                                    setQuery(value);
+                                    setSearchActive(value.length > 0);
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        searchVideos();
+                                    }
+                                }}
+                                className="search-input"
+                            />
+                            <button
+                                onClick={searchVideos}
+                                className="search-btn"
+                            >
+                                Search
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Loading */}
+                    {loading && <Loader />}
+
+                    {/* Video Player */}
+                    {selectedVideo && (
+                        <div className="video-player-container" id="video-player">
+                            <div className="video-player-wrapper">
+                                <div className="video-iframe-container">
+                                    <iframe
+                                        src={`https://www.youtube.com/embed/${selectedVideo}`}
+                                        title="YouTube video player"
+                                        frameBorder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                        className="video-iframe"
+                                    ></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Videos Grid */}
+                    <div className="video-grid">
+                        {videos.map((video) => (
+                            <div
+                                key={video.id.videoId}
+                                onClick={() => {
+                                    setSelectedVideo(video.id.videoId);
+                                    setTimeout(() => {
+                                        const player = document.getElementById("video-player");
+                                        if (player) {
+                                            player.scrollIntoView({ behavior: "smooth" });
+                                        }
+                                    }, 100);
+                                }}
+                                className="video-card"
+                            >
+                                <div className="video-thumbnail-container">
+                                    <img
+                                        src={video.snippet.thumbnails.medium.url}
+                                        alt={video.snippet.title}
+                                        className="video-thumbnail"
+                                    />
+                                    <div className="play-overlay">
+                                        <Play size={48} fill="white" color="white" />
+                                    </div>
+                                </div>
+                                <h3 className="video-title">
+                                    {video.snippet.title}
+                                </h3>
+                                <div className="video-date">
+                                    <Clock size={12} />
+                                    <span>{formatDate(video.snippet.publishTime)}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* No Results */}
+                    {searchActive && videos.length === 0 && !loading && (
+                        <div className="no-results">
+                            <Eye size={64} style={{ color: 'rgba(255, 255, 255, 0.6)', margin: '0 auto 1rem auto' }} />
+                            <h3>No videos found</h3>
+                            <p>Try searching with different keywords</p>
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
