@@ -55,23 +55,29 @@ const VideoSearch = () => {
 
     // Load history from memory (since localStorage is not available)
     useEffect(() => {
+        let history = JSON.parse(localStorage.getItem("query")) || [];
+
         // Initialize empty history
-        setPrevSearchedData([]);
+        setPrevSearchedData(history);
     }, []);
 
     // Handle search
     const searchVideos = () => {
         if (!query.trim()) return;
         setSearchActive(true);
+        // Get existing history from localStorage
+        let history = JSON.parse(localStorage.getItem("query")) || [];
 
-        let updatedData = [...prevSearchedData];
-        if (!updatedData.includes(query)) {
-            updatedData.push(query);
-            if (updatedData.length > 10) {
-                updatedData = updatedData.slice(updatedData.length - 10);
-            }
-            setPrevSearchedData(updatedData);
+        // Avoid duplicates (optional: remove if you want repeats)
+        if (!history.includes(query)) {
+            history.push(query);
         }
+
+        // Save back to localStorage
+        localStorage.setItem("query", JSON.stringify(history));
+
+        setPrevSearchedData(history);
+
 
         fetchVideos(query);
     };
@@ -106,6 +112,7 @@ const VideoSearch = () => {
     };
 
     const clearHistory = () => {
+        localStorage.removeItem("query");
         setPrevSearchedData([]);
     };
 
