@@ -53,13 +53,23 @@ const VideoSearch = () => {
         }
     };
 
-    // Load history from memory (since localStorage is not available)
+    // Load history and set document title
     useEffect(() => {
         let history = JSON.parse(localStorage.getItem("query")) || [];
-
-        // Initialize empty history
         setPrevSearchedData(history);
+        
+        // Set dynamic title
+        document.title = "Video Search - Find Videos Instantly | Free Video Search Engine";
     }, []);
+    
+    // Update title when searching
+    useEffect(() => {
+        if (query) {
+            document.title = `${query} - Video Search Results`;
+        } else {
+            document.title = "Video Search - Find Videos Instantly | Free Video Search Engine";
+        }
+    }, [query]);
 
     // Handle search
     const searchVideos = () => {
