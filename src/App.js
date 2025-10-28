@@ -1,10 +1,17 @@
+import { HelmetProvider } from 'react-helmet-async';
 import VideoSearch from './component/VideoSearch';
+import SEO from './component/SEO';
+import Analytics from './component/Analytics';
+
 function App() {
   return (
-    <div >
-      <VideoSearch />
-
-    </div>
+    <HelmetProvider>
+      <div>
+        <SEO />
+        <Analytics />
+        <VideoSearch />
+      </div>
+    </HelmetProvider>
   );
 }
 

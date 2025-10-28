@@ -187,27 +187,28 @@ const VideoSearch = () => {
                 {/* Main Content */}
                 <div className="main-content">
                     {/* Header */}
-                    <div className="header">
-                        <div className="header-nav">
+                    <header className="header">
+                        <nav className="header-nav">
                             <div></div>
-                            <h1 className="main-title">YouTube Explorer</h1>
+                            <h1 className="main-title">Video Search - Find Videos Instantly</h1>
                             <button
                                 onClick={() => setSidebarOpen(true)}
                                 className="history-toggle-btn"
+                                aria-label="Open search history"
                             >
                                 <History size={24} />
                             </button>
-                        </div>
-                        <p className="subtitle">Discover amazing videos with our beautiful search experience</p>
-                    </div>
+                        </nav>
+                        <p className="subtitle">Powerful video search engine to discover amazing content across the web</p>
+                    </header>
 
                     {/* Search Box */}
-                    <div className="search-container">
+                    <section className="search-container" role="search">
                         <div className="search-input-container">
-                            <Search className="search-icon" size={20} />
+                            <Search className="search-icon" size={20} aria-hidden="true" />
                             <input
                                 type="text"
-                                placeholder="Search for amazing videos..."
+                                placeholder="Search for videos, tutorials, music, and more..."
                                 value={query}
                                 onChange={(e) => {
                                     let value = e.target.value;
@@ -220,15 +221,18 @@ const VideoSearch = () => {
                                     }
                                 }}
                                 className="search-input"
+                                aria-label="Search videos"
+                                autoComplete="off"
                             />
                             <button
                                 onClick={searchVideos}
                                 className="search-btn"
+                                aria-label="Search for videos"
                             >
                                 Search
                             </button>
                         </div>
-                    </div>
+                    </section>
 
                     {/* Loading */}
                     {loading && <Loader />}
